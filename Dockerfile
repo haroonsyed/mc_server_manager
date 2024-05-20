@@ -6,7 +6,7 @@ RUN apt-get update && \
     apt-get install -y software-properties-common && \
     add-apt-repository ppa:deadsnakes/ppa && \
     apt-get update && \
-    apt-get install -y python3 python3-venv python3-dev python3-pip git && \
+    apt-get install -y python3 python3-dev python3-pip git default-jre && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
@@ -16,11 +16,8 @@ WORKDIR /app
 # Copy the current directory contents into the container at /app
 COPY . /app
 
-# Create a virtual environment and install packages
-RUN python3 -m venv venv && \
-    . venv/bin/activate && \
-    python3 -m pip install --upgrade pip && \
-    python3 -m pip install --no-cache-dir -r requirements.txt
+# Install packages
+RUN python3 -m pip install --no-cache-dir -r requirements.txt --break-system-packages
 
 # Keep the container running
-CMD ["tail", "-f", "/dev/null"]
+CMD ["python3", "start.py"]

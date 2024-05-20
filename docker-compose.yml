@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   dev-container:
     build:
@@ -9,4 +7,5 @@ services:
       - .:/app
     ports:
       - "8080:8080"
-    command: tail -f /dev/null
+    # command: tail -f /dev/null # Useful for development of container itself
+    command: python3 start.py
