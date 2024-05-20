@@ -6,6 +6,6 @@ services:
     volumes:
       - .:/app
     ports:
-      - "8080:8080"
+      - "25565:25565"
     # command: tail -f /dev/null # Useful for development of container itself
     command: python3 start.py

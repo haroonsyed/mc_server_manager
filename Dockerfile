@@ -19,8 +19,5 @@ COPY . /app
 # Install packages
 RUN python3 -m pip install --no-cache-dir -r requirements.txt --break-system-packages
 
-# Expose port 25565
-EXPOSE 25565
-
 # Keep the container running
 CMD ["python3", "start.py"]
