@@ -6,7 +6,7 @@ RUN apt-get update && \
     apt-get install -y software-properties-common && \
     add-apt-repository ppa:deadsnakes/ppa && \
     apt-get update && \
-    apt-get install -y python3 python3-dev python3-pip git default-jre firefox && \
+    apt-get install -y python3 python3-dev python3-pip git default-jre && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
