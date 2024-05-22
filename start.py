@@ -220,7 +220,7 @@ def main():
 
             # Zip the contents of the server directory
             # shutil.make_archive(f"{LOCAL_SERVER_DIR}/{next_index}", "zip", LOCAL_SERVER_DIR)
-            with zipfile.ZipFile(f"{LOCAL_SERVER_DIR}/{next_index}.zip", "w") as zip_ref:
+            with zipfile.ZipFile(f"{LOCAL_SERVER_DIR}/{next_index}.zip", "w", compression=zipfile.ZIP_DEFLATED) as zip_ref:
                 for root, _, files in os.walk(LOCAL_SERVER_DIR):
                     for file in files:
                         file_path = os.path.join(root, file)
