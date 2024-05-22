@@ -8,4 +8,4 @@ services:
     ports:
       - "25565:25565"
     # command: tail -f /dev/null # Useful for development of container itself
-    command: python3 start.py
+    command: python3 -u start.py

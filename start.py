@@ -248,6 +248,8 @@ def main():
             # Start the server
             run_mc_server_as_subprocess(LOCAL_SERVER_DIR)
 
+        print("Server stopped. Exiting...")
+
     except HttpError as error:
         # TODO(developer) - Handle errors from drive API.
         print(f"An error occurred: {error}")

@@ -20,4 +20,4 @@ COPY . /app
 RUN python3 -m pip install --no-cache-dir -r requirements.txt --break-system-packages
 
 # Keep the container running
-CMD ["python3", "start.py"]
+CMD ["python3", "-u", "start.py"]
