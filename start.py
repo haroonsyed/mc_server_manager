@@ -220,6 +220,7 @@ def main():
 
             # Zip the contents of the server directory
             shutil.make_archive(f"{LOCAL_SERVER_DIR}/{next_index}", "zip", LOCAL_SERVER_DIR)
+            print(f"Zipped contents to {next_index}.zip")
 
             # Upload the zip file to the backups folder
             if creds.expired and creds.refresh_token:
@@ -235,6 +236,7 @@ def main():
                 resumable=True
             )
 
+            print("Uploading backup file...")
             request = service.files().create(body=file_metadata, media_body=media)
 
             response = None
