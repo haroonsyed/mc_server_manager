@@ -222,15 +222,27 @@ def main():
             shutil.make_archive(f"{LOCAL_SERVER_DIR}/{next_index}", "zip", LOCAL_SERVER_DIR)
 
             # Upload the zip file to the backups folder
+            if creds.expired and creds.refresh_token:
+                creds.refresh(Request())
             file_metadata = {
                 "name": f"{next_index}.zip",
                 "parents": [metadata["backups"][SERVER_NAME]["id"]],
             }
+            # Create a MediaFileUpload object and specify resumable=True
             media = MediaFileUpload(
-                f"{LOCAL_SERVER_DIR}/{next_index}.zip", mimetype="application/zip"
+                f"{LOCAL_SERVER_DIR}/{next_index}.zip", 
+                mimetype="application/zip", 
+                resumable=True
             )
-            file = service.files().create(body=file_metadata, media_body=media, fields="id").execute()
-            print(f"Created backup file: {next_index}.zip %s" % file.get("id"))
+
+            request = service.files().create(body=file_metadata, media_body=media)
+
+            response = None
+            while response is None:
+                status, response = request.next_chunk()
+                if status:
+                    print(f"Uploaded {int(status.progress() * 100)}%")
+            print(f"Created backup file: {next_index}.zip %s!" % response.get("id"))
             latest_backup_name = f"{next_index}.zip"
 
             # Start the server
