@@ -47,7 +47,6 @@ def stop_server():
         print("ERROR: Server process could not be found.")
 
 def get_service():
-    load_dotenv()
     creds = Credentials.from_service_account_file('credentials.json', scopes=SCOPES)
     service = build("drive", "v3", credentials=creds)
 
@@ -232,7 +231,6 @@ def zip_folder_contents(folder_path, zip_name):
 def create_backup():
     LOCAL_SERVER_DIR = os.getenv("LOCAL_SERVER_DIR")
 
-
     print(f"Creating backup #{next_index}")
     # Get index of latest backup from name
     latest_backup_index = getLatestLocalBackup()
@@ -249,42 +247,38 @@ def create_backup():
     print(f"Created backup file: {next_index}.zip")
 
 def main():
-    try:
-        # Get the environment variables
-        SERVER_NAME = os.getenv("SERVER_NAME")
-        BACKUP_INTERVAL = os.getenv("BACKUP_INTERVAL")
-        LOCAL_SERVER_DIR = os.getenv("LOCAL_SERVER_DIR")
-        print(f"Server Name: {SERVER_NAME}")
-        print(f"Backup Interval: {BACKUP_INTERVAL}")
+    load_dotenv()
+    
+    # Get the environment variables
+    SERVER_NAME = os.getenv("SERVER_NAME")
+    BACKUP_INTERVAL = os.getenv("BACKUP_INTERVAL")
+    LOCAL_SERVER_DIR = os.getenv("LOCAL_SERVER_DIR")
+    print(f"Server Name: {SERVER_NAME}")
+    print(f"Backup Interval: {BACKUP_INTERVAL}")
 
-        # Get shared folder id by searching for PROD_MC_SERVER
-        root_folder_id = get_root_folder_id()
+    # Get shared folder id by searching for PROD_MC_SERVER
+    root_folder_id = get_root_folder_id()
 
-        # Get directory structure and print
-        directory_metadata = build_directory_structure(root_folder_id)
-        print(json.dumps(directory_metadata, indent=4))
+    # Get directory structure and print
+    directory_metadata = build_directory_structure(root_folder_id)
+    print(json.dumps(directory_metadata, indent=4))
 
-        # Download the latest backup
-        download_latest_cloud_backup()
+    # Download the latest backup
+    download_latest_cloud_backup()
 
-        # Start the server
-        run_mc_server_as_subprocess()
-        atexit.register(stop_server)
+    # Start the server
+    run_mc_server_as_subprocess()
+    atexit.register(stop_server)
 
-        # Schedule backups while the server is running
-        while server_process_global and server_process_global.poll() is None:
-            time.sleep(int(BACKUP_INTERVAL))
+    # Schedule backups while the server is running
+    while server_process_global and server_process_global.poll() is None:
+        time.sleep(int(BACKUP_INTERVAL))
 
-            stop_server()
-            create_backup()
-            run_mc_server_as_subprocess(LOCAL_SERVER_DIR)
+        stop_server()
+        create_backup()
+        run_mc_server_as_subprocess(LOCAL_SERVER_DIR)
 
-        print("Server stopped. Exiting...")
-
-    except HttpError as error:
-        # TODO(developer) - Handle errors from drive API.
-        print(f"An error occurred: {error}")
-
+    print("Server stopped. Exiting...")
 
 if __name__ == "__main__":
     main()
