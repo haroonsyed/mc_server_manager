@@ -102,7 +102,10 @@ def getLatestCloudBackup():
     latest_backups_keys.remove("id")
     latest_backups_keys.sort()
     latest_backup = latest_backups_keys[-1]
-    return latest_backup
+    
+    latest_backup_id = latest_backups[latest_backup]["id"]
+    latest_backup_name = latest_backups[latest_backup]["name"]
+    return latest_backup_id, latest_backup_name
 
 def getLatestLocalBackup():
     LOCAL_SERVER_DIR = os.getenv("LOCAL_SERVER_DIR")
@@ -174,9 +177,7 @@ def download_file(
 def download_latest_cloud_backup():
     LOCAL_SERVER_DIR = os.getenv("LOCAL_SERVER_DIR")
 
-    latest_backup = getLatestCloudBackup()
-    latest_cloud_backup_id = latest_backup["id"]
-    latest_cloud_backup_name = latest_backup["name"]
+    latest_cloud_backup_id, latest_cloud_backup_name = getLatestCloudBackup()
 
     if getLatestLocalBackup() >= getBackupIterationFromName(latest_cloud_backup_name):
         print(f"Latest backup already downloaded: {latest_cloud_backup_name}")
@@ -231,10 +232,10 @@ def zip_folder_contents(folder_path, zip_name):
 def create_backup():
     LOCAL_SERVER_DIR = os.getenv("LOCAL_SERVER_DIR")
 
-    print(f"Creating backup #{next_index}")
     # Get index of latest backup from name
     latest_backup_index = getLatestLocalBackup()
     next_index = latest_backup_index + 1
+    print(f"Creating backup #{next_index}")
     
     # Remove current zip
     clear_zips(LOCAL_SERVER_DIR)
@@ -248,7 +249,7 @@ def create_backup():
 
 def main():
     load_dotenv()
-    
+
     # Get the environment variables
     SERVER_NAME = os.getenv("SERVER_NAME")
     BACKUP_INTERVAL = os.getenv("BACKUP_INTERVAL")
@@ -276,7 +277,7 @@ def main():
 
         stop_server()
         create_backup()
-        run_mc_server_as_subprocess(LOCAL_SERVER_DIR)
+        run_mc_server_as_subprocess()
 
     print("Server stopped. Exiting...")
 
