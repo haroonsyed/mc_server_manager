@@ -175,21 +175,25 @@ def download_file(
         file = None
 
 def download_latest_cloud_backup():
-    LOCAL_SERVER_DIR = os.getenv("LOCAL_SERVER_DIR")
+    try:
+        LOCAL_SERVER_DIR = os.getenv("LOCAL_SERVER_DIR")
 
-    latest_cloud_backup_id, latest_cloud_backup_name = getLatestCloudBackup()
+        latest_cloud_backup_id, latest_cloud_backup_name = getLatestCloudBackup()
 
-    if getLatestLocalBackup() >= getBackupIterationFromName(latest_cloud_backup_name):
-        print(f"Latest backup already downloaded: {latest_cloud_backup_name}")
-    else:
-        clear_directory(LOCAL_SERVER_DIR)
-        download_file(latest_cloud_backup_id, LOCAL_SERVER_DIR, latest_cloud_backup_name)
+        if getLatestLocalBackup() >= getBackupIterationFromName(latest_cloud_backup_name):
+            print(f"Latest backup already downloaded: {latest_cloud_backup_name}")
+        else:
+            clear_directory(LOCAL_SERVER_DIR)
+            download_file(latest_cloud_backup_id, LOCAL_SERVER_DIR, latest_cloud_backup_name)
 
-        # Unzip contents directly inside LOCAL_SERVER_DIR
-        with zipfile.ZipFile(
-            f"{LOCAL_SERVER_DIR}/{latest_cloud_backup_name}", "r"
-        ) as zip_ref:
-            zip_ref.extractall(LOCAL_SERVER_DIR)
+            # Unzip contents directly inside LOCAL_SERVER_DIR
+            with zipfile.ZipFile(
+                f"{LOCAL_SERVER_DIR}/{latest_cloud_backup_name}", "r"
+            ) as zip_ref:
+                zip_ref.extractall(LOCAL_SERVER_DIR)
+    except Exception as error:
+        print(f"An error occurred while checking for latest cloud backup at initialization: {error}")
+        print("Continuing using local backups...")
 
 def upload_cloud_backup(backup_name):
     SERVER_NAME = os.getenv("SERVER_NAME")
