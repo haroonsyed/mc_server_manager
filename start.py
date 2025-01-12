@@ -275,9 +275,14 @@ def main():
     while server_process_global and server_process_global.poll() is None:
         time.sleep(int(BACKUP_INTERVAL))
 
-        stop_server()
-        create_backup()
-        run_mc_server_as_subprocess()
+        try:
+            stop_server()
+            create_backup()
+            run_mc_server_as_subprocess()
+        except Exception as error:
+            print(f"An error occurred during backup process: {error}")
+            print("Restarting server without backing up...")
+            run_mc_server_as_subprocess()
 
     print("Server stopped. Exiting...")
 
