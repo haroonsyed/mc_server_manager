@@ -175,25 +175,21 @@ def download_file(
         file = None
 
 def download_latest_cloud_backup():
-    try:
-        LOCAL_SERVER_DIR = os.getenv("LOCAL_SERVER_DIR")
+    LOCAL_SERVER_DIR = os.getenv("LOCAL_SERVER_DIR")
 
-        latest_cloud_backup_id, latest_cloud_backup_name = getLatestCloudBackup()
+    latest_cloud_backup_id, latest_cloud_backup_name = getLatestCloudBackup()
 
-        if getLatestLocalBackup() >= getBackupIterationFromName(latest_cloud_backup_name):
-            print(f"Latest backup already downloaded: {latest_cloud_backup_name}")
-        else:
-            clear_directory(LOCAL_SERVER_DIR)
-            download_file(latest_cloud_backup_id, LOCAL_SERVER_DIR, latest_cloud_backup_name)
+    if getLatestLocalBackup() >= getBackupIterationFromName(latest_cloud_backup_name):
+        print(f"Latest backup already downloaded: {latest_cloud_backup_name}")
+    else:
+        clear_directory(LOCAL_SERVER_DIR)
+        download_file(latest_cloud_backup_id, LOCAL_SERVER_DIR, latest_cloud_backup_name)
 
-            # Unzip contents directly inside LOCAL_SERVER_DIR
-            with zipfile.ZipFile(
-                f"{LOCAL_SERVER_DIR}/{latest_cloud_backup_name}", "r"
-            ) as zip_ref:
-                zip_ref.extractall(LOCAL_SERVER_DIR)
-    except Exception as error:
-        print(f"An error occurred while checking for latest cloud backup at initialization: {error}")
-        print("Continuing using local backups...")
+        # Unzip contents directly inside LOCAL_SERVER_DIR
+        with zipfile.ZipFile(
+            f"{LOCAL_SERVER_DIR}/{latest_cloud_backup_name}", "r"
+        ) as zip_ref:
+            zip_ref.extractall(LOCAL_SERVER_DIR)
 
 def upload_cloud_backup(backup_name):
     SERVER_NAME = os.getenv("SERVER_NAME")
@@ -254,22 +250,27 @@ def create_backup():
 def main():
     load_dotenv()
 
-    # Get the environment variables
-    SERVER_NAME = os.getenv("SERVER_NAME")
-    BACKUP_INTERVAL = os.getenv("BACKUP_INTERVAL")
-    LOCAL_SERVER_DIR = os.getenv("LOCAL_SERVER_DIR")
-    print(f"Server Name: {SERVER_NAME}")
-    print(f"Backup Interval: {BACKUP_INTERVAL}")
+    try:
+        # Get the environment variables
+        SERVER_NAME = os.getenv("SERVER_NAME")
+        BACKUP_INTERVAL = os.getenv("BACKUP_INTERVAL")
+        LOCAL_SERVER_DIR = os.getenv("LOCAL_SERVER_DIR")
+        print(f"Server Name: {SERVER_NAME}")
+        print(f"Backup Interval: {BACKUP_INTERVAL}")
 
-    # Get shared folder id by searching for PROD_MC_SERVER
-    root_folder_id = get_root_folder_id()
+        # Get shared folder id by searching for PROD_MC_SERVER
+        root_folder_id = get_root_folder_id()
 
-    # Get directory structure and print
-    directory_metadata = build_directory_structure(root_folder_id)
-    print(json.dumps(directory_metadata, indent=4))
+        # Get directory structure and print
+        directory_metadata = build_directory_structure(root_folder_id)
+        print(json.dumps(directory_metadata, indent=4))
 
-    # Download the latest backup
-    download_latest_cloud_backup()
+        # Download the latest backup
+        download_latest_cloud_backup()
+        
+    except Exception as error:
+        print(f"An error occurred while checking for latest cloud backup at initialization: {error}")
+        print("Continuing using local backups...")
 
     # Start the server
     run_mc_server_as_subprocess()
