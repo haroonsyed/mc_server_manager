@@ -1,5 +1,4 @@
-credentials.json
 .env
-token.json
 /server
 /venv
+*.json
