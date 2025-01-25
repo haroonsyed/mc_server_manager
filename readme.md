@@ -17,8 +17,6 @@
          - 1.zip
          - 2.zip
        - minigame_server
-4. Run `docker-compose up`
+4. Run `docker compose up`
    - In production mode it will automatically start
-   - You can just kill the automatic python process if you are working on modifying the `start.py`
-5. Enjoy
-   \*\* This is all very rough and WIP rn
+   - You may need to modify `docker-compose.yml` depending on ports you want to open up
