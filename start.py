@@ -127,6 +127,30 @@ def getBackupIterationFromName(name):
         return int(name.split(".")[0])
     except:
         return -1
+    
+def remove_old_cloud_backups():
+    SERVER_NAME = os.getenv("SERVER_NAME")
+    service = get_service()
+
+    # Get all cloud backups
+    directory_metadata = build_directory_structure(get_root_folder_id())
+    backsups = directory_metadata["backups"][SERVER_NAME]
+    backsups_keys = list(backsups.keys())
+    backsups_keys.remove("id")
+    backsups_keys.sort()
+
+    # Get all cloud backups to delete (older than 5 backups, make into env property)
+    backups_to_delete_keys = backsups_keys[:-5]
+    backsups_to_delete_ids = [backsups[key]["id"] for key in backups_to_delete_keys]
+
+    # Delete them
+    for file_id in backsups_to_delete_ids:
+        try:
+            service.files().delete(fileId=file_id).execute()
+        except HttpError as error:
+            print(f"An error occurred while deleting cloud backup file with ID {file_id}: {error}")
+
+    print("Finished deleting old cloud backups.")
 
 def clear_zips(directory):
     for filename in os.listdir(directory):
@@ -246,6 +270,9 @@ def create_backup():
     # Upload the zip file to the backups folder
     upload_cloud_backup(next_index)
     print(f"Created backup file: {next_index}.zip")
+
+    # Remove old cloud backups
+    remove_old_cloud_backups()
 
 def main():
     load_dotenv()
