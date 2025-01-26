@@ -8,8 +8,6 @@ WORKDIR /app
 COPY requirements.txt /app/
 
 # Install python libs, git, jre
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
-    add-apt-repository ppa:openjdk-r/ppa && openjdk-21-jdk \
+RUN apt-get update && apt-get install -y openjdk-17-jre \
     && python3 -m pip install --no-cache-dir -r requirements.txt && \
     rm -rf /var/lib/apt/lists/*
