@@ -253,7 +253,7 @@ def zip_folder_contents(folder_path, zip_name):
                 zip_ref.write(file_path, relative_path)
     print(f"Zipped contents to {zip_name}.zip")
 
-def create_backup():
+def create_backup(do_online_backup=True):
     LOCAL_SERVER_DIR = os.getenv("LOCAL_SERVER_DIR")
 
     # Get index of latest backup from name
@@ -268,8 +268,9 @@ def create_backup():
     zip_folder_contents(LOCAL_SERVER_DIR, next_index)
 
     # Upload the zip file to the backups folder
-    upload_cloud_backup(next_index)
-    print(f"Created backup file: {next_index}.zip")
+    if do_online_backup:
+        upload_cloud_backup(next_index)
+        print(f"Created backup file: {next_index}.zip")
 
     # Remove old cloud backups
     remove_old_cloud_backups()
@@ -280,10 +281,11 @@ def main():
     try:
         # Get the environment variables
         SERVER_NAME = os.getenv("SERVER_NAME")
-        BACKUP_INTERVAL = os.getenv("BACKUP_INTERVAL")
+        LOCAL_BACKUP_INTERVAL = os.getenv("LOCAL_BACKUP_INTERVAL")
+        ONLINE_BACKUP_INTERVAL = os.getenv("ONLINE_BACKUP_INTERVAL")
         LOCAL_SERVER_DIR = os.getenv("LOCAL_SERVER_DIR")
         print(f"Server Name: {SERVER_NAME}")
-        print(f"Backup Interval: {BACKUP_INTERVAL}")
+        print(f"Backup Interval: {ONLINE_BACKUP_INTERVAL}")
 
         # Get shared folder id by searching for PROD_MC_SERVER
         root_folder_id = get_root_folder_id()
@@ -302,19 +304,25 @@ def main():
     # Start the server
     run_mc_server_as_subprocess()
     atexit.register(stop_server)
+    
+    last_local_backup_time = time.time()
+    last_online_backup_time = time.time()
 
     # Schedule backups while the server is running
     while server_process_global and server_process_global.poll() is None:
-        time.sleep(int(BACKUP_INTERVAL))
-
-        try:
-            stop_server()
-            create_backup()
-            run_mc_server_as_subprocess()
-        except Exception as error:
-            print(f"An error occurred during backup process: {error}")
-            print("Restarting server without backing up...")
-            run_mc_server_as_subprocess()
+        time.sleep(300)
+        do_backup = time.time() - last_local_backup_time >= int(LOCAL_BACKUP_INTERVAL) or time.time() - last_online_backup_time >= int(ONLINE_BACKUP_INTERVAL)
+        do_online_backup = time.time() - last_online_backup_time >= int(ONLINE_BACKUP_INTERVAL)
+       
+        if do_backup:
+            try:
+                stop_server()
+                create_backup(do_online_backup)
+                run_mc_server_as_subprocess()
+            except Exception as error:
+                print(f"An error occurred during backup process: {error}")
+                print("Restarting server without backing up...")
+                run_mc_server_as_subprocess()
 
     print("Server stopped. Exiting...")
 
