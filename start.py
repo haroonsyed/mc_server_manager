@@ -285,7 +285,9 @@ def main():
         ONLINE_BACKUP_INTERVAL = os.getenv("ONLINE_BACKUP_INTERVAL")
         LOCAL_SERVER_DIR = os.getenv("LOCAL_SERVER_DIR")
         print(f"Server Name: {SERVER_NAME}")
-        print(f"Backup Interval: {ONLINE_BACKUP_INTERVAL}")
+        print(f"Local Backup Interval: {LOCAL_BACKUP_INTERVAL}")
+        print(f"Online Backup Interval: {ONLINE_BACKUP_INTERVAL}")
+        
 
         # Get shared folder id by searching for PROD_MC_SERVER
         root_folder_id = get_root_folder_id()
