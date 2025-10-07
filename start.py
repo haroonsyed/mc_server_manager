@@ -321,6 +321,8 @@ def main():
                 stop_server()
                 create_backup(do_online_backup)
                 run_mc_server_as_subprocess()
+                last_local_backup_time = last_local_backup_time if do_online_backup else time.time()
+                last_online_backup_time = time.time() if do_online_backup else last_online_backup_time
             except Exception as error:
                 print(f"An error occurred during backup process: {error}")
                 print("Restarting server without backing up...")
