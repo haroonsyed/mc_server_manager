@@ -313,7 +313,7 @@ def main():
 
     # Schedule backups while the server is running
     while server_process_global and server_process_global.poll() is None:
-        time.sleep(BACKUP_POLL_INTERVAL)
+        time.sleep(int(BACKUP_POLL_INTERVAL))
         do_local_backup = (time.time() - last_local_backup_time) >= int(LOCAL_BACKUP_INTERVAL)
         do_online_backup = (time.time() - last_online_backup_time) >= int(ONLINE_BACKUP_INTERVAL)
         do_backup = do_local_backup or do_online_backup
