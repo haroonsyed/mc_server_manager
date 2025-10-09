@@ -1,13 +1,15 @@
 # Use an official Ubuntu runtime as a parent image
-FROM python:3.11-slim
+FROM eclipse-temurin:25-jre-alpine
 
 # Set the working directory in the container to /app
 WORKDIR /app
+
+# Install python3
+RUN apk add --no-cache python3 py3-pip
 
 # Cache only the requirements.txt for installation
 COPY requirements.txt /app/
 
 # Install python libs, git, jre
-RUN apt-get update && apt-get install -y openjdk-17-jre \
-    && python3 -m pip install --no-cache-dir -r requirements.txt && \
-    rm -rf /var/lib/apt/lists/*
+RUN python3 -m venv .venv
+RUN source .venv/bin/activate && pip install --no-cache-dir -r requirements.txt

@@ -284,6 +284,7 @@ def main():
         LOCAL_BACKUP_INTERVAL = os.getenv("LOCAL_BACKUP_INTERVAL")
         ONLINE_BACKUP_INTERVAL = os.getenv("ONLINE_BACKUP_INTERVAL")
         LOCAL_SERVER_DIR = os.getenv("LOCAL_SERVER_DIR")
+        BACKUP_POLL_INTERVAL = os.getenv("BACKUP_POLL_INTERVAL")
         print(f"Server Name: {SERVER_NAME}")
         print(f"Local Backup Interval: {LOCAL_BACKUP_INTERVAL}")
         print(f"Online Backup Interval: {ONLINE_BACKUP_INTERVAL}")
@@ -312,21 +313,22 @@ def main():
 
     # Schedule backups while the server is running
     while server_process_global and server_process_global.poll() is None:
-        time.sleep(300)
-        do_backup = time.time() - last_local_backup_time >= int(LOCAL_BACKUP_INTERVAL) or time.time() - last_online_backup_time >= int(ONLINE_BACKUP_INTERVAL)
-        do_online_backup = time.time() - last_online_backup_time >= int(ONLINE_BACKUP_INTERVAL)
+        time.sleep(BACKUP_POLL_INTERVAL)
+        do_local_backup = (time.time() - last_local_backup_time) >= int(LOCAL_BACKUP_INTERVAL)
+        do_online_backup = (time.time() - last_online_backup_time) >= int(ONLINE_BACKUP_INTERVAL)
+        do_backup = do_local_backup or do_online_backup
        
         if do_backup:
             try:
                 stop_server()
                 create_backup(do_online_backup)
                 run_mc_server_as_subprocess()
-                last_local_backup_time = last_local_backup_time if do_online_backup else time.time()
-                last_online_backup_time = time.time() if do_online_backup else last_online_backup_time
             except Exception as error:
                 print(f"An error occurred during backup process: {error}")
                 print("Restarting server without backing up...")
                 run_mc_server_as_subprocess()
+            last_local_backup_time = time.time()
+            last_online_backup_time = time.time() if do_online_backup else last_online_backup_time
 
     print("Server stopped. Exiting...")
 
