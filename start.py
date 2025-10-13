@@ -130,7 +130,7 @@ def getLatestLocalBackup():
     # Sort the files by name
     files.sort()
     # Return the last file
-    return getBackupIterationFromName(files[-1])
+    return -1 if not files else getBackupIterationFromName(files[-1])
 
 def getBackupIterationFromName(name):
     # Try to get number from name, else return -1
