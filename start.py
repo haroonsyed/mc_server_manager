@@ -17,34 +17,48 @@ from googleapiclient.errors import HttpError
 from googleapiclient.http import MediaIoBaseDownload
 from googleapiclient.http import MediaFileUpload
 
+load_dotenv()
+
 # If modifying these scopes, delete the file token.json.
 SCOPES = ["https://www.googleapis.com/auth/drive"]
+CLOUD_ROOT_FOLDER = os.getenv("CLOUD_ROOT_FOLDER")
+CLOUD_SERVER_NAME = os.getenv("CLOUD_SERVER_NAME")
+LOCAL_SERVER_DIR = os.getenv("LOCAL_SERVER_DIR")
+LOCAL_BACKUP_DIR = os.getenv("LOCAL_BACKUP_DIRECTORY")
+LOCAL_BACKUP_INTERVAL = os.getenv("LOCAL_BACKUP_INTERVAL")
+ONLINE_BACKUP_INTERVAL = os.getenv("ONLINE_BACKUP_INTERVAL")
+BACKUP_POLL_INTERVAL = os.getenv("BACKUP_POLL_INTERVAL")
+RAM = os.getenv("RAM")
+
+
+SCOPE_GAME = "[GAME]: " # Will figure out piping with this later (I don't think it will even be performant...)
+SCOPE_MC_SERVER_MANAGER = "[MC_SERVER_MANAGER]: "
+def log_with_scope(scope, message):
+    print(f"{scope} {message}")
 
 def run_mc_server_as_subprocess():
-    LOCAL_SERVER_DIR = os.getenv("LOCAL_SERVER_DIR")
-
-    start_cmd = ["java", "-Xmx6G", "-jar", "fabric-server-launch.jar", "nogui"]
+    start_cmd = ["java", f"-Xmx{RAM}", "-jar", "fabric-server-launch.jar", "nogui"]
     global server_process_global
     server_process_global = subprocess.Popen(start_cmd, cwd=LOCAL_SERVER_DIR, stdin=subprocess.PIPE)
-    print("Minecraft server started.")
+    log_with_scope(SCOPE_MC_SERVER_MANAGER, "Minecraft server started.")
 
     # Print the pids
-    print(f"Server PID: {server_process_global.pid}")
-    print(f"Server Process Group ID: {os.getpgid(server_process_global.pid)}")
+    log_with_scope(SCOPE_MC_SERVER_MANAGER, f"Server PID: {server_process_global.pid}")
+    log_with_scope(SCOPE_MC_SERVER_MANAGER, f"Server Process Group ID: {os.getpgid(server_process_global.pid)}")
     
     #Print this script's PID
-    print(f"Script PID: {os.getpid()}")
-    print(f"Script Process Group ID: {os.getpgrp()}")
+    log_with_scope(SCOPE_MC_SERVER_MANAGER, f"Script PID: {os.getpid()}")
+    log_with_scope(SCOPE_MC_SERVER_MANAGER, f"Script Process Group ID: {os.getpgrp()}")
 
 def stop_server():
     if server_process_global:
-        print("Stopping minecraft server...")
+        log_with_scope(SCOPE_MC_SERVER_MANAGER, "Stopping minecraft server...")
         server_process_global.stdin.write('/stop\n'.encode())
         server_process_global.stdin.flush()
         server_process_global.wait()  # Wait for the server to finish
-        print("Minecraft server stopped.")
+        log_with_scope(SCOPE_MC_SERVER_MANAGER, "Minecraft server stopped.")
     else:
-        print("ERROR: Server process could not be found.")
+        log_with_scope(SCOPE_MC_SERVER_MANAGER, "ERROR: Server process could not be found.")
 
 def get_service():
     creds = Credentials.from_service_account_file('credentials.json', scopes=SCOPES)
@@ -53,11 +67,10 @@ def get_service():
     return service
 
 def get_root_folder_id():
-    ROOT_FOLDER = os.getenv("ROOT_FOLDER")
     results = (
         get_service().files()
         .list(
-            q=f"name='{ROOT_FOLDER}' and mimeType='application/vnd.google-apps.folder' and sharedWithMe",
+            q=f"name='{CLOUD_ROOT_FOLDER}' and mimeType='application/vnd.google-apps.folder' and sharedWithMe",
             fields="files(id)",
         )
         .execute()
@@ -92,12 +105,10 @@ def build_directory_structure(folder_id, indent=""):
     return metadata_results
 
 def getLatestCloudBackup():
-    SERVER_NAME = os.getenv("SERVER_NAME")
-
     # Each backup is 0.zip, 1.zip, 2.zip, etc.
     # Get all keys and sort them
     directory_metadata = build_directory_structure(get_root_folder_id())
-    latest_backups = directory_metadata["backups"][SERVER_NAME]
+    latest_backups = directory_metadata["backups"][CLOUD_SERVER_NAME]
     latest_backups_keys = list(latest_backups.keys())
     latest_backups_keys.remove("id")
     latest_backups_keys.sort()
@@ -108,12 +119,11 @@ def getLatestCloudBackup():
     return latest_backup_id, latest_backup_name
 
 def getLatestLocalBackup():
-    LOCAL_SERVER_DIR = os.getenv("LOCAL_SERVER_DIR")
-    if not os.path.exists(LOCAL_SERVER_DIR):
-        return -1
+    if not os.path.exists(LOCAL_BACKUP_DIR):
+        os.mkdir(LOCAL_BACKUP_DIR)
 
     # Get all files in the directory
-    files = os.listdir(LOCAL_SERVER_DIR)
+    files = os.listdir(LOCAL_BACKUP_DIR)
     # Filter out all files that are not .zip
     files = [f for f in files if f.endswith(".zip")]
     # Sort the files by name
@@ -129,12 +139,11 @@ def getBackupIterationFromName(name):
         return -1
     
 def remove_old_cloud_backups():
-    SERVER_NAME = os.getenv("SERVER_NAME")
     service = get_service()
 
     # Get all cloud backups
     directory_metadata = build_directory_structure(get_root_folder_id())
-    backsups = directory_metadata["backups"][SERVER_NAME]
+    backsups = directory_metadata["backups"][CLOUD_SERVER_NAME]
     backsups_keys = list(backsups.keys())
     backsups_keys.remove("id")
     backsups_keys.sort()
@@ -148,9 +157,9 @@ def remove_old_cloud_backups():
         try:
             service.files().delete(fileId=file_id).execute()
         except HttpError as error:
-            print(f"An error occurred while deleting cloud backup file with ID {file_id}: {error}")
+            log_with_scope(SCOPE_MC_SERVER_MANAGER, f"An error occurred while deleting cloud backup file with ID {file_id}: {error}")
 
-    print("Finished deleting old cloud backups.")
+    log_with_scope(SCOPE_MC_SERVER_MANAGER, "Finished deleting old cloud backups.")
 
 def clear_zips(directory):
     for filename in os.listdir(directory):
@@ -159,7 +168,7 @@ def clear_zips(directory):
             try:
                 os.unlink(file_path)
             except Exception as e:
-                print(f"Failed to delete {file_path}. Reason: {e}")
+                log_with_scope(SCOPE_MC_SERVER_MANAGER, f"Failed to delete {file_path}. Reason: {e}")
 
 def clear_directory(directory):
     if not os.path.exists(directory):
@@ -172,7 +181,7 @@ def clear_directory(directory):
             elif os.path.isdir(file_path):
                 shutil.rmtree(file_path)
         except Exception as e:
-            print(f"Failed to delete {file_path}. Reason: {e}")
+            log_with_scope(SCOPE_MC_SERVER_MANAGER, f"Failed to delete {file_path}. Reason: {e}")
 
 def download_file(
     file_id, destination_folder, destination_file_name="server.zip"
@@ -184,27 +193,25 @@ def download_file(
         done = False
         while done is False:
             status, done = downloader.next_chunk()
-            print(f"Download {int(status.progress() * 100)}.")
+            log_with_scope(SCOPE_MC_SERVER_MANAGER, f"Download {int(status.progress() * 100)}.")
 
         # The file is now in RAM, save to a file at desired path
         if not os.path.exists(destination_folder):
             os.makedirs(destination_folder)
         with open(f"{destination_folder}/{destination_file_name}", "wb") as f:
             full_path = os.path.abspath(f.name)
-            print(f"Saving to {full_path}")
+            log_with_scope(SCOPE_MC_SERVER_MANAGER, f"Saving to {full_path}")
             f.write(file.getvalue())
 
     except HttpError as error:
-        print(f"An error occurred: {error}")
+        log_with_scope(SCOPE_MC_SERVER_MANAGER, f"An error occurred: {error}")
         file = None
 
 def download_latest_cloud_backup():
-    LOCAL_SERVER_DIR = os.getenv("LOCAL_SERVER_DIR")
-
     latest_cloud_backup_id, latest_cloud_backup_name = getLatestCloudBackup()
 
     if getLatestLocalBackup() >= getBackupIterationFromName(latest_cloud_backup_name):
-        print(f"Latest backup already downloaded: {latest_cloud_backup_name}")
+        log_with_scope(SCOPE_MC_SERVER_MANAGER, f"Latest backup already downloaded: {latest_cloud_backup_name}")
     else:
         clear_directory(LOCAL_SERVER_DIR)
         download_file(latest_cloud_backup_id, LOCAL_SERVER_DIR, latest_cloud_backup_name)
@@ -216,14 +223,12 @@ def download_latest_cloud_backup():
             zip_ref.extractall(LOCAL_SERVER_DIR)
 
 def upload_cloud_backup(backup_name):
-    SERVER_NAME = os.getenv("SERVER_NAME")
-    LOCAL_SERVER_DIR = os.getenv("LOCAL_SERVER_DIR")
     directory_metadata = build_directory_structure(get_root_folder_id())
 
     # Upload the zip file to the backups folder
     file_metadata = {
         "name": f"{backup_name}.zip",
-        "parents": [directory_metadata["backups"][SERVER_NAME]["id"]],
+        "parents": [directory_metadata["backups"][CLOUD_SERVER_NAME]["id"]],
     }
     # Create a MediaFileUpload object and specify resumable=True
     media = MediaFileUpload(
@@ -232,18 +237,18 @@ def upload_cloud_backup(backup_name):
         resumable=True
     )
 
-    print("Uploading backup file...")
+    log_with_scope(SCOPE_MC_SERVER_MANAGER, "Uploading backup file...")
     request = get_service().files().create(body=file_metadata, media_body=media)
 
     response = None
     while response is None:
         status, response = request.next_chunk()
         if status:
-            print(f"Uploaded {int(status.progress() * 100)}%")
+            log_with_scope(SCOPE_MC_SERVER_MANAGER, f"Uploaded {int(status.progress() * 100)}%")
 
-def zip_folder_contents(folder_path, zip_name):
+def zip_folder_contents(folder_path, zip_name, output_path=LOCAL_BACKUP_DIR):
     # Zip the contents of the server directory
-    with zipfile.ZipFile(f"{folder_path}/{zip_name}.zip", "w", compression=zipfile.ZIP_DEFLATED) as zip_ref:
+    with zipfile.ZipFile(f"{output_path}/{zip_name}.zip", "w", compression=zipfile.ZIP_DEFLATED) as zip_ref:
         for root, _, files in os.walk(folder_path):
             for file in files:
                 file_path = os.path.join(root, file)
@@ -251,43 +256,31 @@ def zip_folder_contents(folder_path, zip_name):
                 if relative_path == f"{zip_name}.zip":
                     continue  # Skip the zip file itself
                 zip_ref.write(file_path, relative_path)
-    print(f"Zipped contents to {zip_name}.zip")
+    log_with_scope(SCOPE_MC_SERVER_MANAGER, f"Zipped contents to {zip_name}.zip")
 
 def create_backup(do_online_backup=True):
-    LOCAL_SERVER_DIR = os.getenv("LOCAL_SERVER_DIR")
-
     # Get index of latest backup from name
     latest_backup_index = getLatestLocalBackup()
     next_index = latest_backup_index + 1
-    print(f"Creating backup #{next_index}")
+    log_with_scope(SCOPE_MC_SERVER_MANAGER, f"Creating backup #{next_index}")
     
-    # Remove current zip
-    clear_zips(LOCAL_SERVER_DIR)
-
     # Zip the contents of the server directory
     zip_folder_contents(LOCAL_SERVER_DIR, next_index)
 
     # Upload the zip file to the backups folder
     if do_online_backup:
         upload_cloud_backup(next_index)
-        print(f"Created backup file: {next_index}.zip")
+        log_with_scope(SCOPE_MC_SERVER_MANAGER, f"Created backup file: {next_index}.zip")
 
     # Remove old cloud backups
     remove_old_cloud_backups()
 
 def main():
-    load_dotenv()
-
     try:
         # Get the environment variables
-        SERVER_NAME = os.getenv("SERVER_NAME")
-        LOCAL_BACKUP_INTERVAL = os.getenv("LOCAL_BACKUP_INTERVAL")
-        ONLINE_BACKUP_INTERVAL = os.getenv("ONLINE_BACKUP_INTERVAL")
-        LOCAL_SERVER_DIR = os.getenv("LOCAL_SERVER_DIR")
-        BACKUP_POLL_INTERVAL = os.getenv("BACKUP_POLL_INTERVAL")
-        print(f"Server Name: {SERVER_NAME}")
-        print(f"Local Backup Interval: {LOCAL_BACKUP_INTERVAL}")
-        print(f"Online Backup Interval: {ONLINE_BACKUP_INTERVAL}")
+        log_with_scope(SCOPE_MC_SERVER_MANAGER, f"Server Name: {CLOUD_SERVER_NAME}")
+        log_with_scope(SCOPE_MC_SERVER_MANAGER, f"Local Backup Interval: {LOCAL_BACKUP_INTERVAL}")
+        log_with_scope(SCOPE_MC_SERVER_MANAGER, f"Online Backup Interval: {ONLINE_BACKUP_INTERVAL}")
         
 
         # Get shared folder id by searching for PROD_MC_SERVER
@@ -295,14 +288,14 @@ def main():
 
         # Get directory structure and print
         directory_metadata = build_directory_structure(root_folder_id)
-        print(json.dumps(directory_metadata, indent=4))
+        log_with_scope(SCOPE_MC_SERVER_MANAGER, json.dumps(directory_metadata, indent=4))
 
         # Download the latest backup
         download_latest_cloud_backup()
         
     except Exception as error:
-        print(f"An error occurred while checking for latest cloud backup at initialization: {error}")
-        print("Continuing using local backups...")
+        log_with_scope(SCOPE_MC_SERVER_MANAGER, f"An error occurred while checking for latest cloud backup at initialization: {error}")
+        log_with_scope(SCOPE_MC_SERVER_MANAGER, "Continuing using local backups...")
 
     # Start the server
     run_mc_server_as_subprocess()
@@ -324,13 +317,13 @@ def main():
                 create_backup(do_online_backup)
                 run_mc_server_as_subprocess()
             except Exception as error:
-                print(f"An error occurred during backup process: {error}")
-                print("Restarting server without backing up...")
+                log_with_scope(SCOPE_MC_SERVER_MANAGER, f"An error occurred during backup process: {error}")
+                log_with_scope(SCOPE_MC_SERVER_MANAGER, "Restarting server without backing up...")
                 run_mc_server_as_subprocess()
             last_local_backup_time = time.time()
             last_online_backup_time = time.time() if do_online_backup else last_online_backup_time
 
-    print("Server stopped. Exiting...")
+    log_with_scope(SCOPE_MC_SERVER_MANAGER, "Server stopped. Exiting...")
 
 if __name__ == "__main__":
     main()
