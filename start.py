@@ -24,7 +24,7 @@ SCOPES = ["https://www.googleapis.com/auth/drive"]
 CLOUD_ROOT_FOLDER = os.getenv("CLOUD_ROOT_FOLDER")
 CLOUD_SERVER_NAME = os.getenv("CLOUD_SERVER_NAME")
 LOCAL_SERVER_DIR = os.getenv("LOCAL_SERVER_DIR")
-LOCAL_BACKUP_DIR = os.getenv("LOCAL_BACKUP_DIRECTORY")
+LOCAL_BACKUP_DIR = os.getenv("LOCAL_BACKUP_DIR")
 LOCAL_BACKUP_INTERVAL = os.getenv("LOCAL_BACKUP_INTERVAL")
 ONLINE_BACKUP_INTERVAL = os.getenv("ONLINE_BACKUP_INTERVAL")
 BACKUP_POLL_INTERVAL = os.getenv("BACKUP_POLL_INTERVAL")
@@ -121,6 +121,7 @@ def getLatestCloudBackup():
 def getLatestLocalBackup():
     if not os.path.exists(LOCAL_BACKUP_DIR):
         os.mkdir(LOCAL_BACKUP_DIR)
+        return -1
 
     # Get all files in the directory
     files = os.listdir(LOCAL_BACKUP_DIR)
@@ -209,6 +210,9 @@ def download_file(
 
 def download_latest_cloud_backup():
     latest_cloud_backup_id, latest_cloud_backup_name = getLatestCloudBackup()
+    
+    if not os.path.exists(LOCAL_SERVER_DIR):
+        os.mkdir(LOCAL_SERVER_DIR)
 
     if getLatestLocalBackup() >= getBackupIterationFromName(latest_cloud_backup_name):
         log_with_scope(SCOPE_MC_SERVER_MANAGER, f"Latest backup already downloaded: {latest_cloud_backup_name}")
