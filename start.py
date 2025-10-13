@@ -218,11 +218,11 @@ def download_latest_cloud_backup():
         log_with_scope(SCOPE_MC_SERVER_MANAGER, f"Latest backup already downloaded: {latest_cloud_backup_name}")
     else:
         clear_directory(LOCAL_SERVER_DIR)
-        download_file(latest_cloud_backup_id, LOCAL_SERVER_DIR, latest_cloud_backup_name)
+        download_file(latest_cloud_backup_id, LOCAL_BACKUP_DIR, latest_cloud_backup_name)
 
         # Unzip contents directly inside LOCAL_SERVER_DIR
         with zipfile.ZipFile(
-            f"{LOCAL_SERVER_DIR}/{latest_cloud_backup_name}", "r"
+            f"{LOCAL_BACKUP_DIR}/{latest_cloud_backup_name}", "r"
         ) as zip_ref:
             zip_ref.extractall(LOCAL_SERVER_DIR)
 
