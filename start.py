@@ -236,7 +236,7 @@ def upload_cloud_backup(backup_name):
     }
     # Create a MediaFileUpload object and specify resumable=True
     media = MediaFileUpload(
-        f"{LOCAL_SERVER_DIR}/{backup_name}.zip", 
+        f"{LOCAL_BACKUP_DIR}/{backup_name}.zip", 
         mimetype="application/zip", 
         resumable=True
     )
