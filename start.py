@@ -242,7 +242,8 @@ def upload_cloud_backup(backup_name):
     )
 
     log_with_scope(SCOPE_MC_SERVER_MANAGER, "Uploading backup file...")
-    request = get_service().files().create(body=file_metadata, media_body=media)
+    log_with_scope(SCOPE_MC_SERVER_MANAGER, file_metadata)
+    request = get_service().files().create(body=file_metadata, media_body=media, supportsAllDrives=True)
 
     response = None
     while response is None:
