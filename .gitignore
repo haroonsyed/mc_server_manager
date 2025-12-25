@@ -2,3 +2,8 @@
 /server
 /venv
 *.json
+.direnv
+.vscode
+.devcontainer
+__pycache__/
+.venv/

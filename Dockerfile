@@ -4,9 +4,9 @@ FROM eclipse-temurin:21-jre-alpine
 # Set the working directory in the container to /app
 WORKDIR /app
 
-# Install python3
-RUN apk add --no-cache python3 py3-pip
+# Get UV
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
 # Install python libs
-COPY requirements.txt /app/
-RUN pip install --no-cache-dir --break-system-packages -r requirements.txt
+COPY pyproject.toml .python-version uv.lock /app/
+RUN uv sync
