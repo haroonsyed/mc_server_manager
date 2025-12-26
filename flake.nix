@@ -6,9 +6,30 @@
     disko.inputs.nixpkgs.follows = "nixpkgs";
   };
 
-  outputs = { self, nixpkgs, disko, ... }: {
+  outputs = { self, nixpkgs, disko, ... }:
+
+  let
+    system = "x86_64-linux";
+    pkgs = import nixpkgs {
+      inherit system;
+    };
+  in {
+    # Dev shell for local testing
+    devShells.${system}.default = pkgs.mkShell {
+      packages = [
+        pkgs.uv
+        pkgs.jdk21_headless
+      ];
+
+      shellHook = ''
+        export JAVA_BIN="${pkgs.jdk21_headless}/bin/java"
+        ${pkgs.uv}/bin/uv sync
+        . .venv/bin/activate
+      '';
+    };
+
+    # Server VM config
     nixosConfigurations.mc-server = nixpkgs.lib.nixosSystem {
-      system = "x86_64-linux";
       modules = [
         disko.nixosModules.disko
         ({ pkgs, modulesPath, ... }: {
