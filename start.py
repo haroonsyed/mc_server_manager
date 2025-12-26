@@ -30,7 +30,7 @@ ONLINE_BACKUP_INTERVAL = os.getenv("ONLINE_BACKUP_INTERVAL")
 BACKUP_POLL_INTERVAL = os.getenv("BACKUP_POLL_INTERVAL")
 RAM = os.getenv("RAM")
 CREDENTIALS_FILE_LOCATION = os.getenv("CREDENTIALS_FILE_LOCATION")
-
+CREDENTIALS_JSON = os.getenv("CREDENTIALS_JSON")
 
 SCOPE_GAME = "[GAME]: " # Will figure out piping with this later (I don't think it will even be performant...)
 SCOPE_MC_SERVER_MANAGER = "[MC_SERVER_MANAGER]: "
@@ -62,7 +62,10 @@ def stop_server():
         log_with_scope(SCOPE_MC_SERVER_MANAGER, "ERROR: Server process could not be found.")
 
 def get_service():
-    creds = Credentials.from_service_account_file(CREDENTIALS_FILE_LOCATION, scopes=SCOPES)
+    if CREDENTIALS_JSON:
+        creds = Credentials.from_service_account_info(json.loads(CREDENTIALS_JSON), scopes=SCOPES)
+    else:
+        creds = Credentials.from_service_account_file(CREDENTIALS_FILE_LOCATION, scopes=SCOPES)
     service = build("drive", "v3", credentials=creds)
 
     return service
