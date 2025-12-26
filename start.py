@@ -31,6 +31,7 @@ BACKUP_POLL_INTERVAL = os.getenv("BACKUP_POLL_INTERVAL")
 RAM = os.getenv("RAM")
 CREDENTIALS_FILE_LOCATION = os.getenv("CREDENTIALS_FILE_LOCATION")
 CREDENTIALS_JSON = os.getenv("CREDENTIALS_JSON")
+JAVA_BIN = os.getenv("JAVA_BIN", "java")
 
 SCOPE_GAME = "[GAME]: " # Will figure out piping with this later (I don't think it will even be performant...)
 SCOPE_MC_SERVER_MANAGER = "[MC_SERVER_MANAGER]: "
@@ -38,7 +39,7 @@ def log_with_scope(scope, message):
     print(f"{scope} {message}")
 
 def run_mc_server_as_subprocess():
-    start_cmd = ["java", f"-Xmx{RAM}", "-jar", "fabric-server-launch.jar", "nogui"]
+    start_cmd = [JAVA_BIN, f"-Xmx{RAM}", "-jar", "fabric-server-launch.jar", "nogui"]
     global server_process_global
     server_process_global = subprocess.Popen(start_cmd, cwd=LOCAL_SERVER_DIR, stdin=subprocess.PIPE)
     log_with_scope(SCOPE_MC_SERVER_MANAGER, "Minecraft server started.")
