@@ -1,4 +1,3 @@
-#Configuration for a nixos VM
 {
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
@@ -26,37 +25,6 @@
         ${pkgs.uv}/bin/uv sync
         . .venv/bin/activate
       '';
-    };
-
-    # Docker image
-    packages.${system}.mc-server-image = pkgs.dockerTools.buildLayeredImage {
-      name = "mc-server-manager";
-      tag = "latest";
-      contents = [
-        (
-          pkgs.runCommand "app-dir" {} ''
-            mkdir -p $out/app
-            cp -r ${./src}/* $out/app/
-            cp ${./pyproject.toml} $out/app/pyproject.toml
-            cp ${./uv.lock} $out/app/uv.lock
-          ''
-        )
-        pkgs.uv
-        pkgs.jdk21_headless
-        pkgs.bash
-        pkgs.coreutils
-        pkgs.python314
-      ];
-      config = {
-        WorkingDirectory = "/app";
-        Cmd = [ 
-          "${pkgs.bash}/bin/bash" "-c"
-          "cd /app && ${pkgs.uv}/bin/uv sync --frozen && ${pkgs.uv}/bin/uv run start.py" 
-        ];
-        Env = [
-          "JAVA_BIN=${pkgs.jdk21_headless}/bin/java"
-        ];
-      };
     };
 
     # Server VM config

@@ -1,0 +1,12 @@
+services:
+  dev-container:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - .:/app
+    ports:
+      - "25565:25565"
+      - "24454:24454/udp" # For VC
+    # command: tail -f /dev/null # Useful for development of container itself
+    command: uv run start.py
