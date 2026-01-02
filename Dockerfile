@@ -14,4 +14,6 @@ RUN adduser -D -u 1000 mcuser && \
 USER mcuser
 COPY pyproject.toml src/start.py uv.lock /app/
 RUN uv sync
-CMD ["uv", "run", "start.py"]
+
+# https://github.com/astral-sh/uv/issues/12650
+CMD ["uv", "run", "--no-cache", "--no-sync", "start.py"] 
