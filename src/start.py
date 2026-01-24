@@ -116,7 +116,7 @@ def getLatestCloudBackup():
     latest_backups = directory_metadata["backups"][CLOUD_SERVER_NAME]
     latest_backups_keys = list(latest_backups.keys())
     latest_backups_keys.remove("id")
-    latest_backups_keys.sort()
+    latest_backups_keys.sort(key=getBackupIterationFromName)
     latest_backup = latest_backups_keys[-1]
     
     latest_backup_id = latest_backups[latest_backup]["id"]
@@ -133,7 +133,7 @@ def getLatestLocalBackup():
     # Filter out all files that are not .zip
     files = [f for f in files if f.endswith(".zip")]
     # Sort the files by name
-    files.sort()
+    files.sort(key=getBackupIterationFromName)
     # Return the last file
     return -1 if not files else getBackupIterationFromName(files[-1])
 
@@ -152,7 +152,7 @@ def remove_old_cloud_backups():
     backsups = directory_metadata["backups"][CLOUD_SERVER_NAME]
     backsups_keys = list(backsups.keys())
     backsups_keys.remove("id")
-    backsups_keys.sort()
+    backsups_keys.sort(key=getBackupIterationFromName)
 
     # Get all cloud backups to delete (older than 5 backups, make into env property)
     backups_to_delete_keys = backsups_keys[:-5]

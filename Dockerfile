@@ -15,5 +15,6 @@ USER mcuser
 COPY pyproject.toml src/start.py uv.lock /app/
 RUN uv sync
 
+ENV PYTHONUNBUFFERED=1
 # https://github.com/astral-sh/uv/issues/12650
 CMD ["uv", "run", "--no-cache", "--no-sync", "start.py"] 
