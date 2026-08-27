@@ -4,7 +4,14 @@
 
 1. Docker...the rest is handled for you!
 
-## To Run
+* Note for building the docker image you will want to run the `build.sh` script
+
+## To Run From Local
+0. Clone this repo
+1. Rename `sample.env` to `.env` and fill in the LOCAL_SERVER_DIR and SERVER_JAR (relative from LOCAL_SERVER_DIR)
+2. Run `docker compose up`
+
+## To Run With Google Drive Integration
 
 0. Clone this repo
 1. Setup a **service account** and download your credentials as `credentials.json` in the root directory (see https://developers.google.com/drive/api/quickstart/python)

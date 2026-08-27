@@ -25,6 +25,7 @@ CLOUD_ROOT_FOLDER = os.getenv("CLOUD_ROOT_FOLDER")
 CLOUD_SERVER_NAME = os.getenv("CLOUD_SERVER_NAME")
 LOCAL_SERVER_DIR = os.getenv("LOCAL_SERVER_DIR")
 LOCAL_BACKUP_DIR = os.getenv("LOCAL_BACKUP_DIR")
+SERVER_JAR = os.getenv("SERVER_JAR", "fabric-server-launch.jar")
 LOCAL_BACKUP_INTERVAL = os.getenv("LOCAL_BACKUP_INTERVAL")
 ONLINE_BACKUP_INTERVAL = os.getenv("ONLINE_BACKUP_INTERVAL")
 BACKUP_POLL_INTERVAL = os.getenv("BACKUP_POLL_INTERVAL")
@@ -39,7 +40,7 @@ def log_with_scope(scope, message):
     print(f"{scope} {message}")
 
 def run_mc_server_as_subprocess():
-    start_cmd = [JAVA_BIN, f"-Xmx{RAM}", "-jar", "fabric-server-launch.jar", "nogui"]
+    start_cmd = [JAVA_BIN, f"-Xmx{RAM}", "-jar", SERVER_JAR, "nogui"]
     global server_process_global
     server_process_global = subprocess.Popen(start_cmd, cwd=LOCAL_SERVER_DIR, stdin=subprocess.PIPE)
     log_with_scope(SCOPE_MC_SERVER_MANAGER, "Minecraft server started.")
